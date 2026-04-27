@@ -78,28 +78,45 @@
 <body>
 
 <nav class="navbar navbar-light bg-light" style="display: flex; width:100%; justify-content: space-between">
-    <a class="navbar-brand" href="#" style="font-weight: 550">My Todo App</a>
+    <div style="display: flex; align-items: center; gap: 15px"  >
+        <a class="navbar-brand" href="#" style="font-weight: 550" th:text="#{TodoList}">Todo List</a>
+        <span>
+          <span th:text="#{of}"> of </span>
+        <span th:text="${username}">Username</span>
+        </span>
+        <span class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dropdownId" data-toggle="dropdown"
+               aria-haspopup="true"
+               aria-expanded="false" th:text="#{language}"></a>
+            <div class="dropdown-menu" aria-labelledby="dropdownId">
+                <a class="dropdown-item" th:href="@{/todo/list(lang='vi')}" th:text="#{vietnamese}"></a>
+                <a class="dropdown-item" th:href="@{/todo/list(lang='en')}" th:text="#{english}">Action 2</a>
+            </div>
+        </span>
+    </div>
+
     <form class="form-inline my-2 my-lg-0">
         <input class="form-control mr-sm-2" type="text" placeholder="Search">
-        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        <button class="btn btn-outline-success my-2 my-sm-0" type="submit" th:text="#{search}">Search</button>
+        <a th:href="@{/todo/logout}" class="btn btn-secondary">Đăng xuất</a>
     </form>
 </nav>
 
-<h2 class="text-center" style="margin: 20px auto">Todo List</h2>
+<h2 class="text-center" style="margin: 20px auto" th:text="#{TodoList}">TodoList</h2>
 
 <div style="display: flex; justify-content: flex-end">
-    <a style="margin:15px 80px" class="btn btn-outline-primary" th:href="@{/todo/view-add}" role="button">Thêm mới công việc</a>
+    <a style="margin:15px 80px" class="btn btn-outline-primary" th:href="@{/todo/view-add}" role="button" th:text="#{addNewTodo}">Thêm mới công việc</a>
 </div>
 
 <table class="table table-striped table-inverse mx-auto" style="width: 90%">
     <thead class="thead-inverse">
     <tr>
-        <th>ID</th>
-        <th>Content</th>
-        <th>Due Date</th>
-        <th>Status</th>
-        <th>Priority</th>
-        <th colspan="2">Action</th>
+        <th th:text="#{id}">ID</th>
+        <th th:text="#{content}">Content</th>
+        <th th:text="#{dueDate}">Due Date</th>
+        <th th:text="#{status}">Status</th>
+        <th th:text="#{priority}">Priority</th>
+        <th colspan="2" th:text="#{action}">Action</th>
     </tr>
     </thead>
     <tbody>
@@ -118,11 +135,12 @@
             </span>
         </td>
         <td>
-            <a class="btn btn-warning text-light" th:href="@{/todo/view-edit/{id}(id=${todo.id})}">Sửa</a>
+            <a class="btn btn-warning text-light" th:href="@{/todo/view-edit/{id}(id=${todo.id})}" th:text="#{edit}">Sửa</a>
         </td>
         <td>
             <a class="btn btn-danger text-light"
                th:href="@{/todo/delete-todo/{id}(id=${todo.id})}"
+               th:text="#{delete}"
                th:data-name="${todo.content}"
                onclick="return confirm('Bạn có chắc chắn xóa công việc ' + this.dataset.name + '?')">
                 Xóa
@@ -131,6 +149,7 @@
     </tr>
     </tbody>
 </table>
+
 
 <div class="success" th:if="${messages} != null" id="message" th:text="${messages}"></div>
 

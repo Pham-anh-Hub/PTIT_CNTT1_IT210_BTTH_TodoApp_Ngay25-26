@@ -1,15 +1,12 @@
 package todo_app.ptit_cntt1_it210_personaltodoapp.controller;
 
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import todo_app.ptit_cntt1_it210_personaltodoapp.dto.TodoDTO;
 import todo_app.ptit_cntt1_it210_personaltodoapp.service.ITodoService;
@@ -17,28 +14,49 @@ import todo_app.ptit_cntt1_it210_personaltodoapp.service.ITodoService;
 @Controller
 @RequestMapping("todo")
 @RequiredArgsConstructor
+@SessionAttributes("username") // Khai báo quản lý 'username' bằng Session
 public class TodoController {
 
     private final ITodoService todoService;
 
+    @ModelAttribute("username")
+    public String defaultUsername() {
+        return "";
+    }
+
+    @GetMapping("/login")
+    public String login() {
+        return "form-input-name";
+    }
+
+    @PostMapping("/on-login")
+    public String onLogin(
+            @RequestParam("username") String username,
+            Model model
+    ){
+        if (username == null || username.trim().isEmpty()){
+            return "form-input-name";
+        }
+        // Khi thêm vào model, Spring sẽ tự động đồng bộ lên SessionAttributes
+        model.addAttribute("username", username);
+        return "redirect:/todo/list";
+    }
+
     @GetMapping("/list")
     public String todoList(
-            Model model,
-            @PageableDefault(
-                    page = 0,
-                    size = 3,
-                    sort = "id",
-                    direction = Sort.Direction.ASC
-            ) Pageable pageable
-    ){
+            @ModelAttribute("username") String username,
+            Model model
+    ) {
+        if (username.isEmpty()) return "redirect:/todo/login";
+
         model.addAttribute("todoList", todoService.getAllTodos());
         return "view-todo-list";
     }
 
     @GetMapping("/view-add")
-    public String viewAdd(
-            Model model
-    ){
+    public String viewAdd(@ModelAttribute("username") String username, Model model) {
+        if (username.isEmpty()) return "redirect:/todo/login";
+
         model.addAttribute("onEdit", false);
         model.addAttribute("todoDTO", new TodoDTO());
         return "view-form-add";
@@ -46,14 +64,16 @@ public class TodoController {
 
     @PostMapping("/handle-add")
     public String onAddNew(
-            @Valid @ModelAttribute(name = "todoDTO") TodoDTO todoDTO,
+            @Valid @ModelAttribute("todoDTO") TodoDTO todoDTO,
             BindingResult bindingResult,
+            @ModelAttribute("username") String username,
             RedirectAttributes redirectAttributes,
             Model model
     ){
+        if (username.isEmpty()) return "redirect:/todo/login";
+
         if (bindingResult.hasErrors()){
             model.addAttribute("onEdit", false);
-            model.addAttribute("todoDTO", todoDTO);
             return "view-form-add";
         }
 
@@ -64,39 +84,52 @@ public class TodoController {
 
     @GetMapping("/view-edit/{id}")
     public String viewEdit(
-            @PathVariable(name = "id") String todoId,
+            @PathVariable("id") Long id,
+            @ModelAttribute("username") String username,
             Model model
     ){
+        if (username.isEmpty()) return "redirect:/todo/login";
+
         model.addAttribute("onEdit", true);
-        model.addAttribute("todoDTO", todoService.getTodoById(Long.parseLong(todoId)));
+        model.addAttribute("todoDTO", todoService.getTodoById(id));
         return "view-form-add";
     }
 
     @PostMapping("/handle-edit")
     public String onEditTodo(
-            @Valid @ModelAttribute(name = "todoDTO") TodoDTO todoDTO,
+            @Valid @ModelAttribute("todoDTO") TodoDTO todoDTO,
             BindingResult bindingResult,
+            @ModelAttribute("username") String username,
             RedirectAttributes redirectAttributes,
             Model model
     ){
+        if (username.isEmpty()) return "redirect:/todo/login";
+
         if (bindingResult.hasErrors()){
-            model.addAttribute("onEdit", false);
-            model.addAttribute("todoDTO", todoDTO);
+            model.addAttribute("onEdit", true);
             return "view-form-add";
         }
 
         todoService.editTodo(todoDTO);
-        redirectAttributes.addFlashAttribute("messages" ,"Cập nhật thông tin công việc thành công");
+        redirectAttributes.addFlashAttribute("messages" ,"Cập nhật thành công");
         return "redirect:/todo/list";
     }
 
     @GetMapping("/delete-todo/{id}")
     public String onDeleteTodo(
-            @PathVariable(name = "id") String delId,
-            RedirectAttributes redirectAttributes
-    ){
-        todoService.deleteTodo(Long.parseLong(delId));
-        redirectAttributes.addFlashAttribute("messages" ,"Cập nhật thông tin công việc thành công");
+            @PathVariable Long id,
+            @ModelAttribute("username") String username
+    ) {
+        if (username.isEmpty()) return "redirect:/todo/login";
+
+        todoService.deleteTodo(id);
         return "redirect:/todo/list";
+    }
+
+    @GetMapping("/logout")
+    public String logout(SessionStatus sessionStatus) {
+        // Đánh dấu hoàn tất session để Spring xóa các attribute trong @SessionAttributes
+        sessionStatus.setComplete();
+        return "redirect:/todo/login";
     }
 }
